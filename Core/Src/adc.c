@@ -45,16 +45,16 @@ void MX_ADC1_Init(void)
   hadc1.Instance = ADC1;
   hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
   hadc1.Init.Resolution = ADC_RESOLUTION_12B;
-  hadc1.Init.ScanConvMode = ENABLE;
+  hadc1.Init.ScanConvMode = ENABLE;               // 多通道掃描 ✅
   hadc1.Init.ContinuousConvMode = DISABLE;
-  hadc1.Init.DiscontinuousConvMode = ENABLE;
-  hadc1.Init.NbrOfDiscConversion = 1;
+  hadc1.Init.DiscontinuousConvMode = ENABLE;      // 不連續模式 ✅
+  hadc1.Init.NbrOfDiscConversion = 1;             // 每次只轉 1 個 channel// 每次不連續轉換的通道數，這裡設為1表示每次轉換一個通道 ✅
   hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
   hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadc1.Init.NbrOfConversion = 13;
+  hadc1.Init.NbrOfConversion = 13;                // 序列總共 13 個 ✅// 總共要轉換的通道數，這裡設為13表示有13個通道需要轉換 ✅  
   hadc1.Init.DMAContinuousRequests = DISABLE;
-  hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+  hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;  // 每個 channel 完成都觸發 EOC ✅
   if (HAL_ADC_Init(&hadc1) != HAL_OK)
   {
     Error_Handler();

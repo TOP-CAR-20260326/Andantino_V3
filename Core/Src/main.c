@@ -26,7 +26,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "ir_sensor.h"      // ← 加這行，引入 IR 感測器模組的標頭，取得常數、extern 變數宣告與 API 原型
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -100,7 +100,7 @@ int main(void)
   MX_USART3_UART_Init();
   MX_TIM10_Init();
   /* USER CODE BEGIN 2 */
-
+  IR_Init();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -110,6 +110,8 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+    IR_ReadAll();        // 一次讀 13 顆，方便 debug 時觀察所有值
+    HAL_Delay(100);      // 100ms 讀一次，debug 期間夠用了
   }
   /* USER CODE END 3 */
 }
