@@ -27,6 +27,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "ir_sensor.h"      // ← 加這行，引入 IR 感測器模組的標頭，取得常數、extern 變數宣告與 API 原型
+#include <stdio.h>      // ⭐ snprintf
+#include <string.h>     // ⭐ strlen（這個其實用不到，但帶著保險）
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -110,9 +112,24 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+    IR_ReadAll();   // 讀 13 顆 IR
+
+    /* === 組裝 FireWater 字串：val1,val2,...,val13\n === */
+    char buf[128];                                                  // 13 個 4 位數 + 12 個逗號 + \n + 餘裕 ≈ 65 bytes，128 安全
+    int len = snprintf(buf, sizeof(buf),
+                       "%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u\n",
+                       IR[0],  IR[1],  IR[2],  IR[3],  IR[4],
+                       IR[5],  IR[6],  IR[7],  IR[8],  IR[9],
+                       IR[10], IR[11], IR[12]);
+
+    HAL_UART_Transmit(&huart3, (uint8_t*)buf, len, 100);             // 阻塞式傳送，timeout 100ms
+
+    HAL_Delay(20);  // 50 Hz 更新率，VOFA+ 顯示流暢度剛好
+    /*
     IR_ReadAll();        // 一次讀 13 顆，方便 debug 時觀察所有值
     HAL_Delay(100);      // 100ms 讀一次，debug 期間夠用了
-  }
+    */
+    }
   /* USER CODE END 3 */
 }
 
