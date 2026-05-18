@@ -112,9 +112,32 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    IR_ReadAll();   // 讀 13 顆 IR
 
+    /* ⭐ 分開讀，避免 HEAD/SIDE 互相干擾，
+     *    這也比較接近實際循跡時的真實時序 */
+    IR_ReadHead();   // 只開 HEAD MOSFET → 讀 IR[1]~IR[11]
+    IR_ReadSide();   // 只開 SIDE MOSFET → 讀 IR[0], IR[12]
+    
+    /* 兩次讀取之間中間有極短的「兩邊都暗」空檔，
+     * 對 ADC 讀值無害，反而能讓 LED 散熱 */
+
+    /* === 組裝 FireWater 字串：13 個值 === */
+    char buf[128];
+    int len = snprintf(buf, sizeof(buf),
+                       "%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u\n",
+                       IR[0],  IR[1],  IR[2],  IR[3],  IR[4],
+                       IR[5],  IR[6],  IR[7],  IR[8],  IR[9],
+                       IR[10], IR[11], IR[12]);
+
+    HAL_UART_Transmit(&huart3, (uint8_t*)buf, len, 100);
+
+    HAL_Delay(20);  // 50 Hz 更新率，VOFA+ 顯示流暢度剛好
+
+    /*
+    IR_ReadAll();   // 讀 13 顆 IR
+    */
     /* === 組裝 FireWater 字串：val1,val2,...,val13\n === */
+    /*
     char buf[128];                                                  // 13 個 4 位數 + 12 個逗號 + \n + 餘裕 ≈ 65 bytes，128 安全
     int len = snprintf(buf, sizeof(buf),
                        "%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u\n",
@@ -125,6 +148,7 @@ int main(void)
     HAL_UART_Transmit(&huart3, (uint8_t*)buf, len, 100);             // 阻塞式傳送，timeout 100ms
 
     HAL_Delay(20);  // 50 Hz 更新率，VOFA+ 顯示流暢度剛好
+    */
     /*
     IR_ReadAll();        // 一次讀 13 顆，方便 debug 時觀察所有值
     HAL_Delay(100);      // 100ms 讀一次，debug 期間夠用了
