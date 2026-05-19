@@ -125,12 +125,33 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
+    /*第四版測試：模擬實際循跡時的真實時序，讀值送到 VOFA+，並觀察正規化後的輸出是否穩定在 0~1000 範圍內，同時檢測 marker 並累計次數*/
+    IR_ReadHead();         // 讀車頭
+    IR_Normalize();        // 正規化 HEAD
+    IR_ReadSide();         // 讀側邊
+    IR_DetectMarker();     // ⭐ 偵測 marker（用 edge detection）
+
+    /* VOFA+ 輸出：HEAD 正規化值 + 左右 marker 計數 */
+    char buf[160];
+    int len = snprintf(buf, sizeof(buf),
+                       "%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u\n",
+                       IR_Nor[1],  IR_Nor[2],  IR_Nor[3],  IR_Nor[4],
+                       IR_Nor[5],  IR_Nor[6],  IR_Nor[7],  IR_Nor[8],
+                       IR_Nor[9],  IR_Nor[10], IR_Nor[11],
+                       IR_Marker_L_Count, IR_Marker_R_Count);
+
+    HAL_UART_Transmit(&huart3, (uint8_t*)buf, len, 100);
+
+    HAL_Delay(20);  // 50 Hz 更新率，VOFA+ 顯示流暢度剛好
+
     /*第三版測試 : 模擬實際循跡時的真實時序，讀值送到 VOFA+，並觀察正規化後的輸出是否穩定在 0~1000 範圍內 */
+    /*
     IR_ReadHead();      // 1. 讀車頭原始值
     IR_Normalize();     // 2. ⭐ 立刻正規化（給後續 PID/marker 用）
     IR_ReadSide();      // 3. 讀側邊（marker 偵測用，不正規化）
 
     /* === VOFA+ 輸出正規化後的值，觀察是否每顆 IR 都能 0~1000 全範圍變化 === */
+    /*
     char buf[128];
     int len = snprintf(buf, sizeof(buf),
                        "%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u\n",
@@ -141,6 +162,7 @@ int main(void)
     HAL_UART_Transmit(&huart3, (uint8_t*)buf, len, 100);
 
     HAL_Delay(20);  // 50 Hz 更新率，VOFA+ 顯示流暢度剛好
+    */
 
     /*第二版測試：分開讀車頭/側邊，模擬實際循跡時的真實時序，並把讀值送到 VOFA+ */
     /* ⭐ 分開讀，避免 HEAD/SIDE 互相干擾，
