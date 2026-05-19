@@ -12,6 +12,8 @@ extern "C" {                       // 用 C 連結方式（避免 C++ name mangl
 #define IR_HEAD_COUNT     11      // 車頭線陣列數量
 #define IR_HEAD_START     1       // 車頭陣列起始 index（IR[1]=IR1）
 #define IR_HEAD_END       11      // 車頭陣列結束 index（IR[11]=IR11）
+#define IR_NOR_MAX        1000    // ⭐ 新增：正規化輸出範圍上限
+#define IR_MIN_RANGE      50      // ⭐ 新增：Max-Min 至少要這麼大，才算有校正過（避免 Max、Min 太接近導致除以小數放大雜訊）
 
 #define IR_ADC_MAX        4095    // 12-bit ADC 最大值
 #define IR_SETTLE_US      50      // IR 開啟後的穩定時間 (us)
@@ -25,6 +27,7 @@ extern "C" {                       // 用 C 連結方式（避免 C++ name mangl
 extern uint16_t IR[IR_TOTAL_COUNT];      // 目前 ADC 讀值（13 顆 IR 的原始值）
 extern uint16_t IR_Max[IR_TOTAL_COUNT];  // 校正後的最大值（白線/反射強）
 extern uint16_t IR_Min[IR_TOTAL_COUNT];  // 校正後的最小值（黑線/反射弱）
+extern uint16_t IR_Nor[IR_TOTAL_COUNT];  // ⭐ 新增：正規化後的值（0 ~ 1000）
 
 /* === API (Application Programming Interface，應用程式介面：模組對外公開的函式清單) === */
 void IR_Init(void);          // 初始化 IR 模組（GPIO/ADC 預設值等）
@@ -33,6 +36,7 @@ void IR_ReadSide(void);      // 只讀左右 2 顆（給 marker 偵測用）
 void IR_ReadAll(void);       // 一次讀全部 13 顆（測試/校正用）
 void IR_Calibrate(void);     // 全讀並更新 Max/Min
 void IR_ResetCalibration(void);  // ⭐ 新增：重置校正資料（不影響 IR[] 即時讀值）
+void IR_Normalize(void);   // ⭐ 新增：把 IR[1..11] 正規化到 IR_Nor[1..11]
 
 #ifdef __cplusplus                 // 若使用 C++ 編譯器
 }                                  // 結束 extern "C" 區塊

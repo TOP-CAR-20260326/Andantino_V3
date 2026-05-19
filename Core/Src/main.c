@@ -103,6 +103,18 @@ int main(void)
   MX_TIM10_Init();
   /* USER CODE BEGIN 2 */
   IR_Init();
+  /* === 開機校正流程 === */
+  // LED_1 亮起，提示「現在開始校正，請把車身在黑線上方掃動 5 秒」
+  HAL_GPIO_WritePin(LED_1_GPIO_Port, LED_1_Pin, GPIO_PIN_SET);
+  
+  uint32_t cal_start = HAL_GetTick();
+  while (HAL_GetTick() - cal_start < 5000)   // 5 秒
+  {
+      IR_Calibrate();   // 不斷讀值並更新 Max/Min
+      HAL_Delay(10);    // 100 Hz 校正取樣
+  }
+  
+  HAL_GPIO_WritePin(LED_1_GPIO_Port, LED_1_Pin, GPIO_PIN_RESET);  // LED 熄滅 = 校正完成
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -113,16 +125,35 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
+    /*第三版測試 : 模擬實際循跡時的真實時序，讀值送到 VOFA+，並觀察正規化後的輸出是否穩定在 0~1000 範圍內 */
+    IR_ReadHead();      // 1. 讀車頭原始值
+    IR_Normalize();     // 2. ⭐ 立刻正規化（給後續 PID/marker 用）
+    IR_ReadSide();      // 3. 讀側邊（marker 偵測用，不正規化）
+
+    /* === VOFA+ 輸出正規化後的值，觀察是否每顆 IR 都能 0~1000 全範圍變化 === */
+    char buf[128];
+    int len = snprintf(buf, sizeof(buf),
+                       "%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u\n",
+                       IR_Nor[0],  IR_Nor[1],  IR_Nor[2],  IR_Nor[3],  IR_Nor[4],
+                       IR_Nor[5],  IR_Nor[6],  IR_Nor[7],  IR_Nor[8],  IR_Nor[9],
+                       IR_Nor[10], IR_Nor[11], IR_Nor[12]);
+
+    HAL_UART_Transmit(&huart3, (uint8_t*)buf, len, 100);
+
+    HAL_Delay(20);  // 50 Hz 更新率，VOFA+ 顯示流暢度剛好
+
+    /*第二版測試：分開讀車頭/側邊，模擬實際循跡時的真實時序，並把讀值送到 VOFA+ */
     /* ⭐ 分開讀，避免 HEAD/SIDE 互相干擾，
      *    這也比較接近實際循跡時的真實時序 */
-    IR_ReadHead();   // 只開 HEAD MOSFET → 讀 IR[1]~IR[11]
-    IR_ReadSide();   // 只開 SIDE MOSFET → 讀 IR[0], IR[12]
     
+    /* IR_ReadHead();   // 只開 HEAD MOSFET → 讀 IR[1]~IR[11]
+    IR_ReadSide();   // 只開 SIDE MOSFET → 讀 IR[0], IR[12]
+    */
     /* 兩次讀取之間中間有極短的「兩邊都暗」空檔，
      * 對 ADC 讀值無害，反而能讓 LED 散熱 */
 
     /* === 組裝 FireWater 字串：13 個值 === */
-    char buf[128];
+    /*char buf[128];
     int len = snprintf(buf, sizeof(buf),
                        "%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u\n",
                        IR[0],  IR[1],  IR[2],  IR[3],  IR[4],
@@ -132,7 +163,12 @@ int main(void)
     HAL_UART_Transmit(&huart3, (uint8_t*)buf, len, 100);
 
     HAL_Delay(20);  // 50 Hz 更新率，VOFA+ 顯示流暢度剛好
+    */
 
+    /*第一版測試：一次讀全部 13 顆，方便 debug 時觀察所有值
+     * IR_ReadAll();        // 一次讀 13 顆，方便 debug 時觀察所有值
+     * HAL_Delay(100);      // 100ms 讀一次，debug 期間夠用了
+     */
     /*
     IR_ReadAll();   // 讀 13 顆 IR
     */
